@@ -104,11 +104,11 @@ And here is a lovely picture of our downtown San Francisco environment from abov
 ![Map of SF](./misc/1_street_view.png)
 
 #### 2. Set your current local position
-I set the local position relative to the global home position using the following line:
+we have set the local position relative to the global home position using the following line:
 
 `current_local_pos = global_to_local(self.global_position,self.global_home)`
 
-I have previously set the home position in the line:
+we have previously set the home position in the line:
 
 `self.set_home_position(lon0, lat0, 0)`
 
@@ -142,7 +142,7 @@ The goal is set using the two lines:
 ```
 
 #### 5. Modify A* to include diagonal motion (or replace A* altogether)
-I have modified the selection of next moves in the A* to include diagonal motions:
+we have modified the selection of next moves in the A* to include diagonal motions:
 
 The actions includes four new ones (diagonal) with cost sqrt(2):
 
@@ -167,7 +167,7 @@ and in the valid_actions I have added:
 ```
 
 #### 6. Cull waypoints 
-I used collinearity to prune the path. The prunning algorithm looks like this:
+we have used collinearity to prune the path. The prunning algorithm looks like this:
 
 ```
 def prune_path(path):
