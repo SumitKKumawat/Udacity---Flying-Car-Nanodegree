@@ -36,22 +36,41 @@ Like in the `backyardflyer` project the `motion_planning.py` contains the main c
 
 First, A* is an algorithm that searches for a path(or paths) in a search space that has the minimal cost. This is done by continuously visiting nearby nodes but the ones that are closer to the goal given an estimate (heuristic). So, the A* star algorithm searches for a path to connect the initial position of the drone (start) to the goal position. The A* algorithm works on the 3D grid of a map and tries to find connections of a point on the grid to the next until the end goal. Without the modification I have added to the valid_actions() the path that the algorithm finds contains many zig-zag (diagonal) movements. It connects two points through a third by forming a triangle. However, if we set the cost of the diagonal movement to sqrt(2) the algorithm will always choose the less costly one connecting the two points in a straight line with a cost of just 1. To apply this, I had to change the Action class to include the 4 new diagonal actions:
 
-* NORTHWEST
-* SOUTHWEST
-* NORTHEAST
-* SOUTHEAST
+```
+    NORTH = (-1, 0, 1)
+    SOUTH = (1, 0, 1)
+    EAST = (0, 1, 1)
+    WEST = (0, -1, 1)
+    NORTHWEST = (-1, -1, 1.42)
+    NORTHEAST = (-1,1,1.42)
+    SOUTHEAST = (1,1,1.42)
+    SOUTHWEST = (1, -1, 1.42)
+    
+```
 
 with a cost of sqrt(2). I also had to change the method valid_actions() so that the algorithm can remove the costly diagonal actions of sqrt(2) (see pythagorean theorem) and prefer the less costly straight of 1. To do this I added the 4 lines below:
 
     ```python
-    if (x - 1 < 0 and y - 1 < 0) or grid[x - 1, y - 1] == 1:
-        valid_actions.remove(Action.NORTHWEST)
-    if (x + 1 > n and y - 1 < 0) or grid[x + 1, y - 1] == 1:
-        valid_actions.remove(Action.SOUTHWEST)
-    if (x - 1 < 0 and y + 1 > m) or grid[x - 1, y + 1] == 1:
-        valid_actions.remove(Action.NORTHEAST)
-    if (x + 1 > n and y + 1 > m) or grid[x + 1, y + 1] == 1:
-        valid_actions.remove(Action.SOUTHEAST)
+
+    if x - 1 < 0 or grid[x - 1, y] == 1:
+        valid_actions.remove(Action.NORTH)
+    if x + 1 > n or grid[x + 1, y] == 1:
+        valid_actions.remove(Action.SOUTH)
+    if y - 1 < 0 or grid[x, y - 1] == 1:
+        valid_actions.remove(Action.WEST)
+    if y + 1 > m or grid[x, y + 1] == 1:
+        valid_actions.remove(Action.EAST)
+
+    if x - 1 < 0 or y - 1 < 0 or grid[x - 1, y - 1] == 1:
+            valid_actions.remove(Action.NORTHWEST)
+    if x - 1 < 0 or y + 1 > m or grid[x - 1, y + 1] == 1:
+            valid_actions.remove(Action.NORTHEAST)
+    if x + 1 > n or y - 1 < 0 or grid[x + 1, y - 1] == 1:
+            valid_actions.remove(Action.SOUTHWEST)
+    if x + 1 > n or y + 1 > m or grid[x + 1, y + 1] == 1:
+            valid_actions.remove(Action.SOUTHEAST)
+
+
     ```
     
 Since if we are on a cell on a grid there are available 8 actions (4 additional diagonal ones), I should be able to remove them if they're invalid. And they are invalid if they contain an obstacle or are beyond the available grid.
@@ -66,8 +85,6 @@ I used this table below to help me complete the code (we're in the position (0,0
 |   |       |  S   |      |   |
 
 
-For example to remove the `SOUTHEAST` point, notice that it is the 1,1 on the scheme above. So if in the `grid[x+1,y+1] = 1` is an obstacle OR if that position is out of the available map, I remove this action.
-
 And here's a lovely image of my results (ok this image has nothing to do with it, but it's a nice example of how to include images in your writeup!)
 ![Top Down View](./misc/high_up.png)
 
@@ -78,13 +95,12 @@ And here's a lovely image of my results (ok this image has nothing to do with it
 Starting the motion planner program first saves the central location as: lat0,lon0 37.792480,-122.397450 In which it is then decoded in the in a local location. This is done in the following part:
 
 ```python
-        with open("colliders.csv") as myfile:
-            head = [next(myfile) for x in range(2)]
-        latlon = np.fromstring(head[1], dtype='Float64', sep=',')
-        lat0 = latlon[0]
-        lon0 = latlon[1]
-        # TODO: set home position to (lat0, lon0, 0)
-        self.set_home_position(lon0, lat0, 0)
+        # read Lattitude and Longitude as lat0, lon0 from colliders CSV file
+        f = open("colliders.csv", "r")
+        lat_str, lon_str = f.readline().split(',')
+        lat0 = float(lat_str[5:])
+        lon0 = float(lon_str[5:])
+        f.close()
 ```
 
 
@@ -104,42 +120,29 @@ The lan0 and lat0 where retrieved from the .csv file.
 
 
 #### 3. Set grid start position from local position
-This is another step in adding flexibility to the start location. As long as it works you're good to go!
-
-I set the grid start position in the line:
+This is another step in adding flexibility to the start location.
 
 ```
-start = (int(current_local_pos[0]+north_offset),
-int(current_local_pos[1]+east_offset))
+        # starting point on the grid (grid center)
+        grid_start = (-north_offset, -east_offset)
+        # converting start position to current position rather than map center
+        grid_start = (int(local_position[0] - north_offset), int(local_position[1] - east_offset))
+        print(f"GRID_START = {grid_start}")
+        
 ```
-
-I have taken into account the north and east offset on the map to find the place in the grid.
 
 #### 4. Set grid goal position from geodetic coords
 
 The goal is set using the two lines:
 
 ```
-grid_goal = global_to_local((-122.401247,37.796738,0),self.global_home)
-grid_goal = (int(grid_goal[0]+ north_offset),int(grid_goal[1]+ east_offset))
-```
-
-As you can see the input is in geodetic coordinates (-122.401247,37.796738,0) from which I retrieve the local coordinates using global_to_local. The user can also select their goal from running the script with arguments s:
-
-```
-python motion_planning.py --lat 37.796738 --lon
--122.401247
-```
-
-This was done by adding two arguments:
-
-```
-parser.add_argument('--lat', type=float, default=1000, help="latitude")
-```
-
-```
-parser.add_argument('--lon', type=float, 
-  default=1000, help="latitude")
+        # Set goal as some arbitrary position on the grid
+        grid_goal = (-north_offset + 11, -east_offset + 11, TARGET_ALTITUDE)
+        
+        # adapting to set goal as latitude / longitude position and convert
+        grid_goal = (100, 90)
+        print(f"GRID_GOAL = {grid_goal}")
+        
 ```
 
 #### 5. Modify A* to include diagonal motion (or replace A* altogether)
@@ -147,13 +150,10 @@ I have modified the selection of next moves in the A* to include diagonal motion
 
 The actions includes four new ones (diagonal) with cost sqrt(2):
 
-NORTHWEST = (-1, -1, 1.41421)
-
-SOUTHWEST = (1, -1, 1.41421)
-
-NORTHEAST = (-1,1,1.41421)
-
-SOUTHEAST = (1,1,1.41421)
+    NORTHWEST = (-1, -1, 1.42)
+    NORTHEAST = (-1,1,1.42)
+    SOUTHEAST = (1,1,1.42)
+    SOUTHWEST = (1, -1, 1.42)
 
 and in the valid_actions I have added:
 
@@ -174,46 +174,31 @@ and in the valid_actions I have added:
 I used collinearity to prune the path. The prunning algorithm looks like this:
 
 ```
-    def prune_path(self,path):
-        def point(p):
-            return np.array([p[0], p[1],
-             1.]).reshape(1, -1)
+def prune_path(path):
+    pruned_path = [p for p in path]
+    i = 0
 
-        def collinearity_check(p1, p2,
-         p3, epsilon=1e-6):
-            m = np.concatenate((p1, p2, p3), 0)
-            det = np.linalg.det(m)
-            return abs(det) < epsilon
-            
-        pruned_path = []
-        # TODO: prune the path!
-        p1 = path[0]
-        p2 = path[1]
-        pruned_path.append(p1)
-        for i in range(2,len(path)):
-            p3 = path[i]
-            if collinearity_check(point(p1),point(p2),
-            point(p3)):
-                p2 = p3
-            else:
-                pruned_path.append(p2)
-                p1 = p2
-                p2 = p3
-        pruned_path.append(p3)
+    while i < len(pruned_path) - 2:
+        p1 = point(pruned_path[i])
+        p2 = point(pruned_path[i+1])
+        p3 = point(pruned_path[i+2])
 
+        if collinearity_check(p1, p2, p3):
+            pruned_path.remove(pruned_path[i+1])
+        else:
+            i += 1
 
-        return pruned_path
-        
+    return pruned_path     
 ```
 
-In collinearity I select continuous groups of points (3 in each step) to see if they belong in a line or approximately belong to a line. If they can be connected to a line I replace the two waypoints with a single one (longer) and continue the search to see if I can add more way points to the same line. With this change I managed to have a relatively smooth route:
+In collinearity, we are selecting continuous groups of points as three in each set, to see if they belong in a line. If it can be connected to a line then we replace the two waypoints with a single one (longer) and continue the search to see if we can add more way points to the same line. It helped to manage a relatively smooth route:
 
 ![Map of SF](./misc/2_street_view.png)
 
 
 ### Execute the flight
 #### 1. Does it work?
-I tried the suggested location of (longitude = -122.402224, latitude = 37.797330) and the drone guided itself into it. To go back just run from the goal position:
+We tried the suggested location of (long. = -122.402224, lat. = 37.797330) and the drone guided itself into it. for going back need to run from the goal position:
 
 python motion_planning.py --lat 37.792480 --lon
  -122.397450
@@ -222,14 +207,15 @@ You can run any location you like by using the parameters lat,lon .
 Also, note that the planning search takes more than 5 seconds which is the default time out limit. I changed the time out to 40 seconds:
 
 ```
-    conn = MavlinkConnection('tcp:{0}:
-    {1}'.format(args.host, args.port),timeout=40)
+    conn = MavlinkConnection('tcp:{0}:{1}'.format(args.host, args.port), timeout=600)
+    drone = MotionPlanning(conn)
+ 
 ```
 
   
 # Extra Challenges: Real World Planning
 
-I can plan to do later in the course.
+We can plan to do later in the course as per below.
 
 For an extra challenge, consider implementing some of the techniques described in the "Real World Planning" lesson. You could try implementing a vehicle model to take dynamic constraints into account, or implement a replanning method to invoke if you get off course or encounter unexpected obstacles.
 
