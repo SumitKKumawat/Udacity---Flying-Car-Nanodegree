@@ -2,26 +2,22 @@
 
 ### Rubric 1: Implemented body rate control in python and C++. The controller should be a proportional controller on body rates to commanded moments. The controller should take into account the moments of inertia of the drone when calculating the commanded moments.
 
-We have implemented the proportional body rate controller in C++ according to the instructions in the lessons.
-The body rate controller takes as input the p_c,q_c,r_c commands. It returns the desired 3 rotational moment commands and uses the required p,q,r gains. we also limited the returned moments according to the specifications.
-The controller takes into account the moments of inertia, Ix,Iy and Iz.
+Error of the body rotation rates (error) by subtracting the current or estimated body rates from the desired body rates. calulating the ubar by multiplying kpPQR by the error of the body rotation rates.The controller takes into account the moments of inertia, Ix,Iy and Iz.
+
+Calculate a desired 3-axis moment given a desired and current body rate
+ 
+ INPUTS: 
+ * pqrCmd: desired body rates [rad/s]
+ * pqr: current or estimated body rates [rad/s]
+ 
+ OUTPUT:
+ return a V3F containing the desired moments for each of the 3 axes
 
 ```
-    float p_error = pqrCmd[0] - pqr[0];
-    float q_error = pqrCmd[1] - pqr[1];
-    float r_error = pqrCmd[2] - pqr[2];
-    
-    float u_bar_p = kpPQR[0]*p_error;
-    float u_bar_q = kpPQR[1]*q_error;
-    float u_bar_r = kpPQR[2]*r_error;
-    
-    float momentp = u_bar_p*Ixx;
-    float momentq = u_bar_q*Iyy;
-    float momentr = u_bar_r*Izz;
-    
-    momentCmd.x = momentp;
-    momentCmd.y = momentq;
-    momentCmd.z = momentr;
+ // code below for body rate control
+ V3F error = pqrCmd -pqr;
+ V3F ubar = kpPQR * error;
+ V3F momentum = ubar * V3F(Ixx,Iyy,Izz);
     
 ```
 
@@ -29,105 +25,165 @@ The controller takes into account the moments of inertia, Ix,Iy and Iz.
 
 We have implemented the roll pitch controller in C++ as per below.It takes a thrust command, x and y accelerations and the attitude of the drone (φ,ψ,θ) and outputs the p and q commands. p_c, q_c. As you can see from the implementation the mass of the drone is accounted when calculating the target angles.
 
-```
-    float b_x_a = R(0,2);
-    float b_y_a = R(1,2);
-    float R33 = R(2,2);
-    float R21 = R(1,0);
-    float R22 = R(1,1);
-    float R12 = R(0,1);
-    float R11 = R(0,0);
-    
-    float b_x_c_target = accelCmd[0]*mass/(collThrustCmd);
-    float b_y_c_target = accelCmd[1]*mass/(collThrustCmd);
-    
-    float b_dot_x_c = kpBank*(b_x_c_target - b_x_a);
-    float b_dot_y_c = kpBank*(b_y_c_target - b_y_a);
-    
-    float p_c = (1/R33)*(R21*b_dot_x_c - R11*b_dot_y_c);
-    float q_c = (1/R33)*(R22*b_dot_x_c - R12*b_dot_y_c);
+Calculated acceleration by dividing the collective thrust(collThrustCmd) by the mass of the vehicle. Then need to calculate the r_x_term and r_y_term by using the same process for both. we have initialized variables like r_x_zero to r_x_six by getting their value from the rotation matrix R. The commanded r_x and r_y were calculated by taking the commanded acceleration for x and y individually and dividing them by calcuated acceleration at begining. The error for both the r_x and r_y calculated by simply subtracting the r_x_five and six respectively from the r_x and r_y commanded. At last, the pqrCmd for both x and y was found by multiplying them by the kpBank variable.
 
-    pqrCmd.x = p_c;
-    pqrCmd.y = q_c;
 
 ```
 
-This Controller accounts for the non-linear transformation from local accelerations to body rates. This is represented by the first two expressions where the mass of the drone is accounted.:
+  // below code for role pitch control
+    if (collThrustCmd > 0) {
 
-```
-    float b_x_c_target = accelCmd[0]*mass/(collThrustCmd);
-    float b_y_c_target = accelCmd[1]*mass/(collThrustCmd);
+        float acceleration = -collThrustCmd / mass;
 
-```
+        float r_x_zero   =   R(0, 0);
+        float r_x_one    =   R(0, 1);
+        float r_x_two    =   R(1, 0);
+        float r_x_three  =   R(1, 1);
+        float r_x_four   =   R(2, 2);
+        float r_x_five   =   R(1, 2);
+        float r_x_six    =   R(0, 2);
 
+        float r_x_command = accelCmd.x / acceleration;
+        float r_x_error = r_x_command - r_x_six;
+        float r_x_term = kpBank * r_x_error;
 
-### Rubric 3: Implement altitude control in python. The controller should use both the down position and the down velocity to command thrust. Ensure that the output value is indeed thrust (the drone's mass needs to be accounted for) and that the thrust includes the non-linear effects from non-zero roll/pitch angles.
+        float r_y_command = accelCmd.y / acceleration;
+        float r_y_error = r_y_command - r_x_five;
+        float r_y_term = kpBank * r_y_error;
 
-The altitude control ensures that the vehicle stayes close to the commanded set position and velocity by computing a thrust value. The output thrust is sent to the roll pitch controller. Because the commanded thrust is going to be shared across all dimensions. The portion that points in the x,y will determine acceleration in those directions.
+        float x_command = (1 / r_x_four) * (r_x_two * r_x_term - r_x_zero * r_y_term);
+        float y_command = (1 / r_x_four) * (r_x_three * r_x_term - r_x_one * r_y_term);
 
-As you can see the implementation uses both the down position (altitude) and the down velocity (vertical_velocity). The output value is a thrust since it's acceleration times mass (F=ma). The mass is obviously accounted for.
-
-### Rubric 4:Implement altitude controller in C++.The controller should use both the down position and the down velocity to command thrust. Ensure that the output value is indeed thrust (the drone's mass needs to be accounted for) and that the thrust includes the non-linear effects from non-zero roll/pitch angles. Additionally, the C++ altitude controller should contain an integrator to handle the weight non-idealities presented in scenario 4.
-
-Similarly for the C++ version: The drone's mass is accounted for and also the non linear effects from non-zero pitch angels as before. we also have added the term integratedAltitudeError to handle the weight non-idealities.
-
-```
-    float b_z = R(2,2);
-    
-    velZCmd = -CONSTRAIN(-velZCmd,-maxDescentRate,maxAscentRate);
-    float e = posZCmd - posZ;
-    integratedAltitudeError += KiPosZ*e*dt;
-
-    float u_bar_1 = kpPosZ*(posZCmd - posZ) + kpVelZ*(velZCmd - velZ) + accelZCmd + integratedAltitudeError;
-    float accelZ = (u_bar_1 - 9.81f)/b_z;
-    if (accelZ > 0){
-        accelZ = 0;
+        pqrCmd.x = x_command;
+        pqrCmd.y = y_command;
+        pqrCmd.z = 0.0;
     }
-    
-        thrust = -accelZ*mass;
-        
+
+    else {
+        pqrCmd.x = 0.0;
+        pqrCmd.y = 0.0;
+        pqrCmd.z = 0.0;
+    }
+
+
 ```
 
-### Rubric 5:Implement lateral position control in python and C++. The controller should use the local NE position and velocity to generate a commanded local acceleration.
+### Rubric 3: Implement altitude control in c++. The controller should use both the down position and the down velocity to command thrust. Ensure that the output value is indeed thrust (the drone's mass needs to be accounted for) and that the thrust includes the non-linear effects from non-zero roll/pitch angles.
+
+The altitude control ensures that the vehicle stayes close to the commanded set position and velocity by computing a thrust value. The output thrust is sent to the roll pitch controller. Because the commanded thrust is going to be shared across all dimensions. The portion that points in the x,y will determine acceleration in those directions. Term integratedAltitudeError to handle the weight non-idealities.
+
+As you can see the implementation uses both the down position and the down velocity. The output value is a thrust since it's acceleration times mass (F=ma). 
+
+```
+  // Calculate desired quad thrust based on altitude setpoint, actual altitude,
+  //   vertical velocity setpoint, actual vertical velocity, and a vertical 
+  //   acceleration feed-forward command
+  // INPUTS: 
+  //   posZCmd, velZCmd: desired vertical position and velocity in NED [m]
+  //   posZ, velZ: current vertical position and velocity in NED [m]
+  //   accelZCmd: feed-forward vertical acceleration in NED [m/s2]
+  //   dt: the time step of the measurements [seconds]
+  // OUTPUT:
+  //   return a collective thrust command in [N]
+
+```
+
+```
+  // DescentRate and Ascent rate are constrains of the acceleration
+  // we need to consider the mass of vehicle and gravity so the vehicle hovers
+
+  float pose_err = posZCmd - posZ;
+
+  float velocity_err = velZCmd - velZ;
+
+  float r_three = R(2, 2);
+
+  integratedAltitudeError = integratedAltitudeError + dt * pose_err;
+  
+  float u_b = kpPosZ * pose_err + kpVelZ * velocity_err + KiPosZ * integratedAltitudeError  + accelZCmd;
+
+  float acclr =  CONSTRAIN((u_b - 9.81) / r_three, -maxDescentRate / dt, maxAscentRate / dt );
+
+  thrust = -mass * acclr;
+  
+```
+
+### Rubric 4:Implement lateral position control in C++. The controller should use the local NE position and velocity to generate a commanded local acceleration.
 
 This controller is a PD controller in the x and y trajectories. In generates an acceleration commandin the x-y directions which is sent to the roll pitch controller.
 
-The controller uses the local NE position and velocity, local_position_cmd and local_velocity_cmd and it generates the commanded acceleration below. The negative sign shows that the position is in NE.
+```
+  // Calculate a desired horizontal acceleration based on 
+  //  desired lateral position/velocity/acceleration and current pose
+  // INPUTS: 
+  //   posCmd: desired position, in NED [m]
+  //   velCmd: desired velocity, in NED [m/s]
+  //   pos: current position, NED [m]
+  //   vel: current velocity, NED [m/s]
+  //   accelCmdFF: feed-forward acceleration, NED [m/s2]
+  // OUTPUT:
+  //   return a V3F with desired horizontal accelerations. 
+  //     the Z component should be 0
+  // HINTS: 
+  //  - use the gain parameters kpPosXY and kpVelXY
+  //  - make sure you limit the maximum horizontal velocity and acceleration
+  //    to maxSpeedXY and maxAccelXY
 
 ```
-    V3F desAccel;
-    
-    accelCmd[0] = CONSTRAIN(accelCmd[0], -maxAccelXY, maxAccelXY);
-    accelCmd[1] = CONSTRAIN(accelCmd[1], -maxAccelXY, maxAccelXY);
-    
-    velCmd[0] = CONSTRAIN(velCmd[0], -maxSpeedXY,maxSpeedXY);
-    velCmd[1] = CONSTRAIN(velCmd[1], -maxSpeedXY,maxSpeedXY);
 
+```
+  V3F r_position = V3F(kpPosXY, kpPosXY, 0.0);
+  V3F r_velocity = V3F(kpVelXY, kpVelXY, 0.0);
+  V3F velocity_command;
     
-    desAccel.x = kpPosXY*(posCmd[0] - pos[0]) + kpVelXY*(velCmd[0] - vel[0]) + accelCmd[0];
-    desAccel.y = kpPosXY*(posCmd[1] - pos[1]) + kpVelXY*(velCmd[1] - vel[1]) + accelCmd[1];
+  if (velCmd.mag() > maxSpeedXY) {
+      velocity_command = velCmd.norm() * maxSpeedXY;
+  } else {
+      velocity_command = velCmd;
+  }
     
-    desAccel.x = -desAccel.x;//CONSTRAIN(desAccel.x, -maxAccelXY, maxAccelXY);
-    desAccel.y = -desAccel.y;//CONSTRAIN(desAccel.y, -maxAccelXY, maxAccelXY);
-    desAccel.x = CONSTRAIN(desAccel.x, -maxAccelXY, maxAccelXY);
-    desAccel.y = CONSTRAIN(desAccel.y, -maxAccelXY, maxAccelXY);
-
-    desAccel.z = 0;
+  V3F position_error = posCmd - pos;
+  V3F velocity_error = velocity_command - vel;
+    
+  accelCmd = accelCmd + (r_position * position_error + r_velocity * velocity_error);
+    
+  if (accelCmd.mag() > maxAccelXY) {
+       accelCmd = accelCmd.norm() * maxAccelXY;
+   }
     
 ```
 
-### Rubric 6:Implement yaw control in python and C++. The controller can be a linear/proportional heading controller to yaw rate commands (non-linear transformation not required).
+### Rubric 5:Implement yaw control in python and C++. The controller can be a linear/proportional heading controller to yaw rate commands (non-linear transformation not required).
 
-Yaw control is control through the reactive moment command and that command only effects yaw. I used a linear transformation:
+Yaw control is control through the reactive moment command and that command only effects yaw.
 
 ```
-  yawCmd = CONSTRAIN(yawCmd, -maxTiltAngle, maxTiltAngle);
-  yawRateCmd = kpYaw*(yawCmd - yaw);
+  // Calculate a desired yaw rate to control yaw to yawCmd
+  // INPUTS: 
+  //   yawCmd: commanded yaw [rad]
+  //   yaw: current yaw [rad]
+  // OUTPUT:
+  //   return a desired yaw rate [rad/s]
+  // HINTS: 
+  //  - use fmodf(foo,b) to unwrap a radian angle measure float foo to range [0,b]. 
+  //  - use the yaw control gain parameter kpYaw
+
 ```
 
-### Rubric 7:Implement calculating the motor commands given commanded thrust and moments in C++.The thrust and moments should be converted to the appropriate 4 different desired thrust forces for the moments. Ensure that the dimensions of the drone are properly accounted for when calculating thrust from moments.
+```
+  // we unwrap the angle then multiply by error to get the Rate
+  
+  yawCmd = fmodf(yawCmd, 2 * F_PI);
+  
+  float yaw_err = yawCmd - yaw;
+  
+  yawRateCmd = kpYaw * yaw_err;
 
-As you can see below the thrust and moment commands have been used to calculate the desired thrusts. To calculate the desired thrusts I used 4 equations:
+```
+
+### Rubric 6:Implement calculating the motor commands given commanded thrust and moments in C++.The thrust and moments should be converted to the appropriate 4 different desired thrust forces for the moments. Ensure that the dimensions of the drone are properly accounted for when calculating thrust from moments.
+
+As you can see below the thrust and moment commands have been used to calculate the desired thrusts. To calculate the desired thrusts we have used 4 equations:
 
   1)collThrustCmd = f1 + f2 + f3 + f4;
   2)momentCmd.x = l * (f1 + f4 - f2 - f3); // l = L*sqrt(2)/2) - perpendicular distance to axes
@@ -136,30 +192,98 @@ As you can see below the thrust and moment commands have been used to calculate 
   
 where torque = kappa * thrust
 
-The dimensions of the drone are accounted for in the 2 and 3 equations above:
+```
+  // dividing tau values by 'l' instead of doing it in equation here, it helps in readability .....
+  float l = L / sqrtf(2.f);
+  float tx1 = momentCmd.x / l;
+  float tx2 = momentCmd.y / l;
+  float tx3 = -momentCmd.z / kappa;
+  float tx4 = collThrustCmd;
+
+  // getting below equations from the values of Ftotal, tau_x, tau_y, tau_z
+	float f_1 = (tx1 + tx2 + tx3 + tx4) / 4.f;
+	float f_2 = (tx4 -tx1 + tx2 - tx3 ) / 4.f;
+	float f_3 = (tx1 - tx2 - tx3 + tx4) / 4.f;
+	float f_4 = (tx3 + tx4 -tx1 - tx2 ) / 4.f;
+
+  // keep in mind that, force can not be (-)ve
+	cmd.desiredThrustsN[0] = f_1; // front left
+	cmd.desiredThrustsN[1] = f_2; // front right
+	cmd.desiredThrustsN[2] = f_3; // rear left
+	cmd.desiredThrustsN[3] = f_4; // rear right
+```
+
+
+### Rubric 7: Your C++ controller is successfully able to fly the provided test trajectory and visually passes inspection of the scenarios leading up to the test trajectory.Ensure that in each scenario the drone looks stable and performs the required task. Specifically check that the student's controller is able to handle the non-linearities of scenario 4 (all three drones in the scenario should be able to perform the required task with the same control gains used).
 
 ```
-float a = momentCmd.x/(L*(1.414213562373095/2));//(L*(1.414213562373095));
-    float b = momentCmd.y/(L*(1.414213562373095/2));//(L*(1.414213562373095));
-    float c = momentCmd.z/kappa;
-    float d = collThrustCmd;
-
-    cmd.desiredThrustsN[0] = ((a+b+c+d)/(4.f));
-    cmd.desiredThrustsN[1] = ((-a+b-c+d)/(4.f));
-    cmd.desiredThrustsN[3] = ((-a-b+c+d)/(4.f));
-    cmd.desiredThrustsN[2] = ((a-b-c+d)/(4.f));
-
-    
-    cmd.desiredThrustsN[0] = CONSTRAIN(cmd.desiredThrustsN[0],minMotorThrust,maxMotorThrust);
-    cmd.desiredThrustsN[1] = CONSTRAIN(cmd.desiredThrustsN[1],minMotorThrust,maxMotorThrust);
-    cmd.desiredThrustsN[2] = CONSTRAIN(cmd.desiredThrustsN[2],minMotorThrust,maxMotorThrust);
-    cmd.desiredThrustsN[3] = CONSTRAIN(cmd.desiredThrustsN[3],minMotorThrust,maxMotorThrust);
-```
-### Rubric 8: Your C++ controller is successfully able to fly the provided test trajectory and visually passes inspection of the scenarios leading up to the test trajectory.Ensure that in each scenario the drone looks stable and performs the required task. Specifically check that the student's controller is able to handle the non-linearities of scenario 4 (all three drones in the scenario should be able to perform the required task with the same control gains used).
-
+IMULATOR!
+Select main window to interact with keyboard/mouse:
+LEFT DRAG / X+LEFT DRAG / Z+LEFT DRAG = rotate, pan, zoom camera
+W/S/UP/LEFT/DOWN/RIGHT - apply force
+C - clear all graphs
+R - reset simulation
+Space - pause simulation
+Simulation #1 (../config/X_TestMavlink.txt)
+2020-06-28 16:54:58.064193+0530 FCND-CPPSim[6182:240896] [General] -[__NSCFString replaceCharactersInRange:withString:]: Range or index out of bounds
+2020-06-28 16:54:58.099978+0530 FCND-CPPSim[6182:240896] [General] (
+	0   CoreFoundation                      0x00007fff32b7fbe7 __exceptionPreprocess + 250
+	1   libobjc.A.dylib                     0x00007fff6b7be5bf objc_exception_throw + 48
+	2   CoreFoundation                      0x00007fff32c2e60e -[__NSCFString characterAtIndex:].cold.1 + 0
+	3   CoreFoundation                      0x00007fff32c2e885 -[__NSCFString replaceOccurrencesOfString:withString:options:range:].cold.1 + 0
+	4   CoreFoundation                      0x00007fff32bc2908 mutateError + 44
+	5   CoreFoundation                      0x00007fff32b164c8 -[__NSCFString replaceCharactersInRange:withString:] + 50
+	6   GLUT                                0x00007fff3553c851 -[GLUTApplication applicationWillFinishLaunching:] + 175
+	7   CoreFoundation                      0x00007fff32af989f __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 12
+	8   CoreFoundation                      0x00007fff32af9833 ___CFXRegistrationPost1_block_invoke + 63
+	9   CoreFoundation                      0x00007fff32af97a8 _CFXRegistrationPost1 + 372
+	10  CoreFoundation                      0x00007fff32af9414 ___CFXNotificationPost_block_invoke + 80
+	11  CoreFoundation                      0x00007fff32ac958d -[_CFXNotificationRegistrar find:object:observer:enumerator:] + 1554
+	12  CoreFoundation                      0x00007fff32ac8a39 _CFXNotificationPost + 1351
+	13  Foundation                          0x00007fff35143786 -[NSNotificationCenter postNotificationName:object:userInfo:] + 59
+	14  AppKit                              0x00007fff2fd69059 -[NSApplication finishLaunching] + 330
+	15  AppKit                              0x00007fff300538b1 _NSApplicationBeginRunning + 179
+	16  AppKit                              0x00007fff3020b0a5 -[NSApplication _beginRunning] + 26
+	17  GLUT                                0x00007fff3553c523 -[GLUTApplication run] + 117
+	18  GLUT                                0x00007fff355487e7 glutMainLoop + 264
+	19  FCND-CPPSim                         0x000000010004f79b main + 699
+	20  libdyld.dylib                       0x00007fff6c965cc9 start + 1
+	21  ???                                 0x0000000000000001 0x0 + 1
+)
+2020-06-28 16:54:58.105689+0530 FCND-CPPSim[6182:240896] [General] _createMenuRef called with existing principal MenuRef already associated with menu
+2020-06-28 16:54:58.108310+0530 FCND-CPPSim[6182:240896] [General] (
+	0   CoreFoundation                      0x00007fff32b7fbe7 __exceptionPreprocess + 250
+	1   libobjc.A.dylib                     0x00007fff6b7be5bf objc_exception_throw + 48
+	2   CoreFoundation                      0x00007fff32b7fa45 +[NSException raise:format:] + 189
+	3   AppKit                              0x00007fff2fd707d2 -[NSCarbonMenuImpl _createMenuRef] + 55
+	4   AppKit                              0x00007fff2fd701a2 -[NSCarbonMenuImpl _instantiateCarbonMenu] + 133
+	5   AppKit                              0x00007fff2fd691c5 -[NSApplication finishLaunching] + 694
+	6   AppKit                              0x00007fff300538b1 _NSApplicationBeginRunning + 179
+	7   AppKit                              0x00007fff3020b0a5 -[NSApplication _beginRunning] + 26
+	8   GLUT                                0x00007fff3553c523 -[GLUTApplication run] + 117
+	9   GLUT                                0x00007fff355487e7 glutMainLoop + 264
+	10  FCND-CPPSim                         0x000000010004f79b main + 699
+	11  libdyld.dylib                       0x00007fff6c965cc9 start + 1
+	12  ???                                 0x0000000000000001 0x0 + 1
+)
+2020-06-28 16:54:58.256270+0530 FCND-CPPSim[6182:240896] Metal API Validation Enabled
+2020-06-28 16:54:58.348418+0530 FCND-CPPSim[6182:241079] flock failed to lock maps file: errno = 35
+2020-06-28 16:54:58.351320+0530 FCND-CPPSim[6182:241079] flock failed to lock maps file: errno = 35
+Simulation #2 (../config/X_TestMavlink.txt)
+PASS: ABS(Quad2.PosFollowErr) was less than 0.250000 for at least 3.000000 seconds
+Simulation #3 (../config/1_Intro.txt)
+Simulation #4 (../config/1_Intro.txt)
+FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
+Simulation #5 (../config/1_Intro.txt)
+FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
+Simulation #6 (../config/1_Intro.txt)
+FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
+Simulation #7 (../config/3_PositionControl.txt)
+Simulation #8 (../config/3_PositionControl.txt)
 PASS: ABS(Quad1.Pos.X) was less than 0.100000 for at least 1.250000 seconds
 PASS: ABS(Quad2.Pos.X) was less than 0.100000 for at least 1.250000 seconds
 PASS: ABS(Quad2.Yaw) was less than 0.100000 for at least 1.000000 seconds
-Simulation #104 (../config/5_TrajectoryFollow.txt)
-Simulation #105 (../config/5_TrajectoryFollow.txt)
-PASS: ABS(Quad2.PosFollowErr) was less than 0.250000 for at least 3.000000 seconds
+Simulation #9 (../config/5_TrajectoryFollow.txt)
+Simulation #10 (../config/X_TestManyQuads.txt)
+
+```
