@@ -40,13 +40,14 @@ INCLUDE Simulation.txt
 [Quad1:Quad]
 InitialPos=-2,1,-1
 TrajectoryOffset = 0,1,0
-Mass = .8
+Mass = .4
 
 [Quad2:Quad]
 InitialPos=-2,0,-1
 TrajectoryOffset=0,0,0
+Mass = .4
 
 [Quad3:Quad]
 InitialPos=-2,-1,-1
 TrajectoryOffset=0,-1,0
-cy=-.05
+Mass = .4
