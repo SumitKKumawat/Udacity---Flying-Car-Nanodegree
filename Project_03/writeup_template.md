@@ -217,73 +217,108 @@ where torque = kappa * thrust
 ### Rubric 7: Your C++ controller is successfully able to fly the provided test trajectory and visually passes inspection of the scenarios leading up to the test trajectory.Ensure that in each scenario the drone looks stable and performs the required task. Specifically check that the student's controller is able to handle the non-linearities of scenario 4 (all three drones in the scenario should be able to perform the required task with the same control gains used).
 
 ```
-IMULATOR!
+SIMULATOR!
 Select main window to interact with keyboard/mouse:
 LEFT DRAG / X+LEFT DRAG / Z+LEFT DRAG = rotate, pan, zoom camera
 W/S/UP/LEFT/DOWN/RIGHT - apply force
 C - clear all graphs
 R - reset simulation
 Space - pause simulation
-Simulation #1 (../config/X_TestMavlink.txt)
-2020-06-28 16:54:58.064193+0530 FCND-CPPSim[6182:240896] [General] -[__NSCFString replaceCharactersInRange:withString:]: Range or index out of bounds
-2020-06-28 16:54:58.099978+0530 FCND-CPPSim[6182:240896] [General] (
-	0   CoreFoundation                      0x00007fff32b7fbe7 __exceptionPreprocess + 250
-	1   libobjc.A.dylib                     0x00007fff6b7be5bf objc_exception_throw + 48
-	2   CoreFoundation                      0x00007fff32c2e60e -[__NSCFString characterAtIndex:].cold.1 + 0
-	3   CoreFoundation                      0x00007fff32c2e885 -[__NSCFString replaceOccurrencesOfString:withString:options:range:].cold.1 + 0
-	4   CoreFoundation                      0x00007fff32bc2908 mutateError + 44
-	5   CoreFoundation                      0x00007fff32b164c8 -[__NSCFString replaceCharactersInRange:withString:] + 50
-	6   GLUT                                0x00007fff3553c851 -[GLUTApplication applicationWillFinishLaunching:] + 175
-	7   CoreFoundation                      0x00007fff32af989f __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 12
-	8   CoreFoundation                      0x00007fff32af9833 ___CFXRegistrationPost1_block_invoke + 63
-	9   CoreFoundation                      0x00007fff32af97a8 _CFXRegistrationPost1 + 372
-	10  CoreFoundation                      0x00007fff32af9414 ___CFXNotificationPost_block_invoke + 80
-	11  CoreFoundation                      0x00007fff32ac958d -[_CFXNotificationRegistrar find:object:observer:enumerator:] + 1554
-	12  CoreFoundation                      0x00007fff32ac8a39 _CFXNotificationPost + 1351
-	13  Foundation                          0x00007fff35143786 -[NSNotificationCenter postNotificationName:object:userInfo:] + 59
-	14  AppKit                              0x00007fff2fd69059 -[NSApplication finishLaunching] + 330
-	15  AppKit                              0x00007fff300538b1 _NSApplicationBeginRunning + 179
-	16  AppKit                              0x00007fff3020b0a5 -[NSApplication _beginRunning] + 26
-	17  GLUT                                0x00007fff3553c523 -[GLUTApplication run] + 117
-	18  GLUT                                0x00007fff355487e7 glutMainLoop + 264
+Simulation #1 (../config/5_TrajectoryFollow.txt)
+2020-06-30 05:59:32.853555+0530 FCND-CPPSim[2770:106156] Metal API Validation Enabled
+2020-06-30 05:59:32.896012+0530 FCND-CPPSim[2770:106532] flock failed to lock maps file: errno = 35
+2020-06-30 05:59:32.899311+0530 FCND-CPPSim[2770:106532] flock failed to lock maps file: errno = 35
+2020-06-30 05:59:32.953509+0530 FCND-CPPSim[2770:106156] [General] -[__NSCFString replaceCharactersInRange:withString:]: Range or index out of bounds
+2020-06-30 05:59:32.995087+0530 FCND-CPPSim[2770:106156] [General] (
+	0   CoreFoundation                      0x00007fff36bb5be7 __exceptionPreprocess + 250
+	1   libobjc.A.dylib                     0x00007fff6f7f45bf objc_exception_throw + 48
+	2   CoreFoundation                      0x00007fff36c6460e -[__NSCFString characterAtIndex:].cold.1 + 0
+	3   CoreFoundation                      0x00007fff36c64885 -[__NSCFString replaceOccurrencesOfString:withString:options:range:].cold.1 + 0
+	4   CoreFoundation                      0x00007fff36bf8908 mutateError + 44
+	5   CoreFoundation                      0x00007fff36b4c4c8 -[__NSCFString replaceCharactersInRange:withString:] + 50
+	6   GLUT                                0x00007fff39572851 -[GLUTApplication applicationWillFinishLaunching:] + 175
+	7   CoreFoundation                      0x00007fff36b2f89f __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 12
+	8   CoreFoundation                      0x00007fff36b2f833 ___CFXRegistrationPost1_block_invoke + 63
+	9   CoreFoundation                      0x00007fff36b2f7a8 _CFXRegistrationPost1 + 372
+	10  CoreFoundation                      0x00007fff36b2f414 ___CFXNotificationPost_block_invoke + 80
+	11  CoreFoundation                      0x00007fff36aff58d -[_CFXNotificationRegistrar find:object:observer:enumerator:] + 1554
+	12  CoreFoundation                      0x00007fff36afea39 _CFXNotificationPost + 1351
+	13  Foundation                          0x00007fff39179786 -[NSNotificationCenter postNotificationName:object:userInfo:] + 59
+	14  AppKit                              0x00007fff33d9f059 -[NSApplication finishLaunching] + 330
+	15  AppKit                              0x00007fff340898b1 _NSApplicationBeginRunning + 179
+	16  AppKit                              0x00007fff342410a5 -[NSApplication _beginRunning] + 26
+	17  GLUT                                0x00007fff39572523 -[GLUTApplication run] + 117
+	18  GLUT                                0x00007fff3957e7e7 glutMainLoop + 264
 	19  FCND-CPPSim                         0x000000010004f79b main + 699
-	20  libdyld.dylib                       0x00007fff6c965cc9 start + 1
-	21  ???                                 0x0000000000000001 0x0 + 1
+	20  libdyld.dylib                       0x00007fff7099bcc9 start + 1
 )
-2020-06-28 16:54:58.105689+0530 FCND-CPPSim[6182:240896] [General] _createMenuRef called with existing principal MenuRef already associated with menu
-2020-06-28 16:54:58.108310+0530 FCND-CPPSim[6182:240896] [General] (
-	0   CoreFoundation                      0x00007fff32b7fbe7 __exceptionPreprocess + 250
-	1   libobjc.A.dylib                     0x00007fff6b7be5bf objc_exception_throw + 48
-	2   CoreFoundation                      0x00007fff32b7fa45 +[NSException raise:format:] + 189
-	3   AppKit                              0x00007fff2fd707d2 -[NSCarbonMenuImpl _createMenuRef] + 55
-	4   AppKit                              0x00007fff2fd701a2 -[NSCarbonMenuImpl _instantiateCarbonMenu] + 133
-	5   AppKit                              0x00007fff2fd691c5 -[NSApplication finishLaunching] + 694
-	6   AppKit                              0x00007fff300538b1 _NSApplicationBeginRunning + 179
-	7   AppKit                              0x00007fff3020b0a5 -[NSApplication _beginRunning] + 26
-	8   GLUT                                0x00007fff3553c523 -[GLUTApplication run] + 117
-	9   GLUT                                0x00007fff355487e7 glutMainLoop + 264
+2020-06-30 05:59:32.996400+0530 FCND-CPPSim[2770:106156] [General] _createMenuRef called with existing principal MenuRef already associated with menu
+2020-06-30 05:59:32.998798+0530 FCND-CPPSim[2770:106156] [General] (
+	0   CoreFoundation                      0x00007fff36bb5be7 __exceptionPreprocess + 250
+	1   libobjc.A.dylib                     0x00007fff6f7f45bf objc_exception_throw + 48
+	2   CoreFoundation                      0x00007fff36bb5a45 +[NSException raise:format:] + 189
+	3   AppKit                              0x00007fff33da67d2 -[NSCarbonMenuImpl _createMenuRef] + 55
+	4   AppKit                              0x00007fff33da61a2 -[NSCarbonMenuImpl _instantiateCarbonMenu] + 133
+	5   AppKit                              0x00007fff33d9f1c5 -[NSApplication finishLaunching] + 694
+	6   AppKit                              0x00007fff340898b1 _NSApplicationBeginRunning + 179
+	7   AppKit                              0x00007fff342410a5 -[NSApplication _beginRunning] + 26
+	8   GLUT                                0x00007fff39572523 -[GLUTApplication run] + 117
+	9   GLUT                                0x00007fff3957e7e7 glutMainLoop + 264
 	10  FCND-CPPSim                         0x000000010004f79b main + 699
-	11  libdyld.dylib                       0x00007fff6c965cc9 start + 1
-	12  ???                                 0x0000000000000001 0x0 + 1
+	11  libdyld.dylib                       0x00007fff7099bcc9 start + 1
 )
-2020-06-28 16:54:58.256270+0530 FCND-CPPSim[6182:240896] Metal API Validation Enabled
-2020-06-28 16:54:58.348418+0530 FCND-CPPSim[6182:241079] flock failed to lock maps file: errno = 35
-2020-06-28 16:54:58.351320+0530 FCND-CPPSim[6182:241079] flock failed to lock maps file: errno = 35
-Simulation #2 (../config/X_TestMavlink.txt)
+Simulation #2 (../config/5_TrajectoryFollow.txt)
 PASS: ABS(Quad2.PosFollowErr) was less than 0.250000 for at least 3.000000 seconds
 Simulation #3 (../config/1_Intro.txt)
 Simulation #4 (../config/1_Intro.txt)
-FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
 Simulation #5 (../config/1_Intro.txt)
-FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
 Simulation #6 (../config/1_Intro.txt)
-FAIL: ABS(Quad.PosFollowErr) was less than 0.500000 for 0.000000 seconds, which was less than 0.800000 seconds
-Simulation #7 (../config/3_PositionControl.txt)
-Simulation #8 (../config/3_PositionControl.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #7 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #8 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #9 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #10 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #11 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #12 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #13 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #14 (../config/1_Intro.txt)
+PASS: ABS(Quad.PosFollowErr) was less than 0.500000 for at least 0.800000 seconds
+Simulation #15 (../config/2_AttitudeControl.txt)
+Simulation #16 (../config/2_AttitudeControl.txt)
+PASS: ABS(Quad.Roll) was less than 0.025000 for at least 0.750000 seconds
+PASS: ABS(Quad.Omega.X) was less than 2.500000 for at least 0.750000 seconds
+Simulation #17 (../config/2_AttitudeControl.txt)
+PASS: ABS(Quad.Roll) was less than 0.025000 for at least 0.750000 seconds
+PASS: ABS(Quad.Omega.X) was less than 2.500000 for at least 0.750000 seconds
+Simulation #18 (../config/3_PositionControl.txt)
+Simulation #19 (../config/3_PositionControl.txt)
 PASS: ABS(Quad1.Pos.X) was less than 0.100000 for at least 1.250000 seconds
 PASS: ABS(Quad2.Pos.X) was less than 0.100000 for at least 1.250000 seconds
 PASS: ABS(Quad2.Yaw) was less than 0.100000 for at least 1.000000 seconds
-Simulation #9 (../config/5_TrajectoryFollow.txt)
-Simulation #10 (../config/X_TestManyQuads.txt)
-
+Simulation #20 (../config/4_Nonidealities.txt)
+Simulation #21 (../config/4_Nonidealities.txt)
+PASS: ABS(Quad1.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+PASS: ABS(Quad2.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+PASS: ABS(Quad3.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+Simulation #22 (../config/4_Nonidealities.txt)
+PASS: ABS(Quad1.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+PASS: ABS(Quad2.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+PASS: ABS(Quad3.PosFollowErr) was less than 0.100000 for at least 1.500000 seconds
+Simulation #23 (../config/5_TrajectoryFollow.txt)
+Simulation #24 (../config/5_TrajectoryFollow.txt)
+PASS: ABS(Quad2.PosFollowErr) was less than 0.250000 for at least 3.000000 seconds
+Simulation #25 (../config/X_TestManyQuads.txt)
+Simulation #26 (../config/X_TestManyQuads.txt)
+Simulation #27 (../config/X_TestMavlink.txt)
+Simulation #28 (../config/X_TestMavlink.txt)
+PASS: ABS(Quad2.PosFollowErr) was less than 0.250000 for at least 3.000000 seconds
 ```
