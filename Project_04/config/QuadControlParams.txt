@@ -1,0 +1,82 @@
+############################## SLR SIMPLECONFIG ############################
+# this is a comment. [X] is a namespace. [X:Y] initializes X from Y
+# Namespace and parameter names are not case-sensitive
+# X=Y sets X to Y. Y may be a string, float, or list of 3 floats
+############################################################################
+
+[QuadControlParams] 
+
+UseIdealEstimator=1
+
+# Physical properties
+Mass = 0.4
+L = 0.17
+Ixx = 0.0023
+Iyy = 0.0023
+Izz = 0.0046
+kappa = 0.016
+minMotorThrust = .1
+maxMotorThrust = 4.5
+
+# Position control gains -----------------------------
+# kpPosXY = 1
+# kpPosZ = 1
+# KiPosZ = 40
+
+# Scenario 3
+# kpPosXY = 35
+# kpPosZ = 20
+# KiPosZ = 10
+
+# Scenario 4
+# kpPosXY = 35
+# kpPosZ = 20
+# KiPosZ = 22
+
+# Scenario 5
+kpPosXY = 35
+kpPosZ = 20
+KiPosZ = 12
+
+# Velocity control gains -----------------------------
+# kpVelXY = 14
+# kpVelZ = 6
+
+# Scenario 3
+# kpVelXY = 12
+# kpVelZ = 6
+
+# Scenario 4
+# kpVelXY = 14
+# kpVelZ = 9
+
+# Scenario 5
+kpVelXY = 14
+kpVelZ = 8
+
+# Angle control gains --------------------------------
+# kpBank = 5
+# kpYaw = 1
+
+# Scenario 5
+kpYaw = 2
+
+# Scenario 2
+# kpBank = 9
+
+# Scenario 5
+kpBank = 8
+
+
+# Angle rate gains -----------------------------------
+# kpPQR = 23, 23, 5
+
+# Scenario 2
+kpPQR = 87, 87, 10
+
+# limits
+maxAscentRate = 5
+maxDescentRate = 2
+maxSpeedXY = 5
+maxHorizAccel = 12
+maxTiltAngle = .7
